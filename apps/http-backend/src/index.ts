@@ -1,52 +1,62 @@
 import express from "express";
-import jwt from "jsonwebtoken"
+import jwt, { JwtPayload } from "jsonwebtoken"
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { usermiddleware } from "./middlewares/usermiddleware";
 import {Createroomschema, Createuserschema, Signinschema} from "@repo/common/types";
-import { prismaclient } from "@repo/db/client";
+import prismaclient  from "@repo/db/client";
 
 const app=express();
+app.use(express.json())
 
-app.post("/signup",(req,res)=>{
-    const parseddata=Createuserschema.safeParse(req.body)
-    // prismaclient.users.create({
-    //     data:{
-    //         username:parseddata.data?.username,
-    //         password:parseddata.data?.password,
-    //         name:parseddata.data?.name
-
-    //     }
-    // })
-
+app.post("/signup",async(req,res)=>{
+    const parseddata=Createuserschema.safeParse(req.body) 
     if(!parseddata.success){
         res.json({
             message:"incorrect inputs"
         })
         return;
     }
-
-    const username=req.body.username;
-    const password=req.body.password;
-
-    res.json({
-        message:"signed in"
-    })
+    try{
+      const user=  await prismaclient.users.create({
+            data :{      
+                email :parseddata.data?.username, 
+                password:parseddata.data.password,
+                name:parseddata.data.name,        
+            }
+        })
+        res.json({
+            userid:user.id
+        })
+    }catch(e){
+        res.status(401).json({
+            message:"user already exists"
+        })
+    }
+   
 })
-app.post("/signin",(req,res)=>{
-    const data=Signinschema.safeParse(req.body)
+app.post("/signin",async(req,res)=>{
+    const parseddatadata=Signinschema.safeParse(req.body)
 
-    if(!data.success){
+    if(!parseddatadata.success){
         res.json({
             message:"incorrect inputs"
         })
         return;
     }
-    const username=req.body.username;
-    const password=req.body.password;
-       
-    const userid=1
+    const user=await prismaclient.users.findFirst({
+        where:{
+          email:parseddatadata.data.username,
+          password:parseddatadata.data.password  
+        }
+    })   
+    if(!user){
+        res.status(403).json({
+            message:"user not exist"
+        })
+        return;
+    }
        const token=jwt.sign({
-        userid
+        userid:user?.id
        },JWT_SECRET)
 
     res.json({
@@ -54,19 +64,34 @@ app.post("/signin",(req,res)=>{
     })
 })
 
-app.post("/create-room" ,usermiddleware,(req,res)=>{
-    const data=Createroomschema.safeParse(req.body)
+app.post("/create-room" ,usermiddleware,async (req,res)=>{
+    const parseddata=Createroomschema.safeParse(req.body)
 
-    if(!data.success){
+    if(!parseddata.success){
         res.json({
             message:"incorrect inputs"
         })
         return;
     }
+    
+    const userid=(req as any).userid ;
+  try{
 
-    res.json({
-    roomid:123
-    })
+      const room= await prismaclient.rooms.create({
+          data:{
+              slug:parseddata.data.name,
+              adminid:userid
+            }
+        })
+        res.json({
+            roomid:room.id
+        })
+    }catch(e){
+        res.status(403).json({
+            message:"room name already exist"
+        })
+    } 
+   
 })
 
 
