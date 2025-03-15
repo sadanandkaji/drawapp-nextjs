@@ -8,9 +8,17 @@ import { prismaclient } from "@repo/db/client";
 const app=express();
 
 app.post("/signup",(req,res)=>{
-    const data=Createuserschema.safeParse(req.body)
+    const parseddata=Createuserschema.safeParse(req.body)
+    // prismaclient.users.create({
+    //     data:{
+    //         username:parseddata.data?.username,
+    //         password:parseddata.data?.password,
+    //         name:parseddata.data?.name
 
-    if(!data.success){
+    //     }
+    // })
+
+    if(!parseddata.success){
         res.json({
             message:"incorrect inputs"
         })
