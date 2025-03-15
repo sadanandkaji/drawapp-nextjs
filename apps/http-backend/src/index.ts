@@ -2,7 +2,8 @@ import express from "express";
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { usermiddleware } from "./middlewares/usermiddleware";
-import {Createroomschema, Createuserschema, Signinschema} from "@repo/common/types"
+import {Createroomschema, Createuserschema, Signinschema} from "@repo/common/types";
+import { prismaclient } from "@repo/db/client";
 
 const app=express();
 
