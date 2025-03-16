@@ -93,6 +93,21 @@ app.post("/create-room" ,usermiddleware,async (req,res)=>{
     } 
    
 })
-
+app.get("/chats/:roomid",async (req,res)=>{
+         const roomid=Number(req.params.roomid);
+       const messages= await  prismaclient.chat.findMany({
+            where:{
+                roomid:roomid
+            },
+            orderBy:{
+                id:"desc"
+            },
+            take:50,
+            
+         })
+         res.json({
+            messages
+         })
+})
 
 app.listen(3001)
