@@ -94,8 +94,11 @@ app.post("/create-room" ,usermiddleware,async (req,res)=>{
    
 })
 app.get("/chats/:roomid",async (req,res)=>{
-         const roomid=Number(req.params.roomid);
-       const messages= await  prismaclient.chat.findMany({
+    try{
+
+        const roomid=Number(req.params.roomid);
+        
+        const messages= await  prismaclient.chat.findMany({
             where:{
                 roomid:roomid
             },
@@ -104,10 +107,28 @@ app.get("/chats/:roomid",async (req,res)=>{
             },
             take:50,
             
-         })
-         res.json({
+        })
+        res.json({
             messages
-         })
+        })
+    }catch(e){
+        console.log(e)
+        res.json({
+            message:[]
+        })
+    }
+})
+
+app.get("/room/:slug",async (req,res)=>{
+    const slug=req.params.slug;
+    const room=await prismaclient.rooms.findFirst({
+        where:{
+            slug
+        }
+    })
+    res.json({
+        room
+    })
 })
 
 app.listen(3001)

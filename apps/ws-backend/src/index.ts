@@ -46,9 +46,9 @@ wss.on('connection', function connection(ws,request){
         ws,
         rooms: [] 
     });
-    ws.on("message", async function message(data){
-        const Parseddata=JSON.parse(data as unknown as string)
-
+    
+    ws.on("message", async function message(data){     
+           const Parseddata=JSON.parse(data.toString()) 
         if(Parseddata.type === "join-room"){
             const user=users.find(x=>(x.ws === ws))
             user?.rooms.push(Parseddata.roomid)
@@ -71,8 +71,6 @@ wss.on('connection', function connection(ws,request){
                     userid
                 }
             })
-            
-
             users.forEach(user=>{
                 if(user.rooms.includes(roomid)){
                     user.ws.send(JSON.stringify({
