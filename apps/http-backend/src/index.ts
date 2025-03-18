@@ -107,7 +107,7 @@ app.get("/chats/:roomid",async (req,res)=>{
             orderBy:{
                 id:"desc"
             },
-            take:50,
+            take:100,
             
         })
         res.json({

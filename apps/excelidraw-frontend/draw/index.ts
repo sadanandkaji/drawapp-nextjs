@@ -12,7 +12,21 @@ type Shape = {
     centerX: number;
     centerY: number;
     radius: number;
-} 
+} |{
+    type:"line";
+    x1:number;
+    x2:number;
+    y1:number;
+    y2:number;
+} |{
+    type:"triangle";
+    x1:number;
+    x2:number;
+    y1:number;
+    y2:number;
+    x3:number;
+    y3:number;
+}
 
 export async function initdraw(canvas:HTMLCanvasElement,roomid:string,socket:WebSocket){
     const ctx=canvas.getContext("2d");
@@ -46,14 +60,49 @@ export async function initdraw(canvas:HTMLCanvasElement,roomid:string,socket:Web
     clicked=false
     const width=e.clientX-startx;
     const height=e.clientY-starty;
-    const shape : Shape={
-        type:"rect",
-        x:startx,
-        y:starty,
-        width:width,
-        height:height
+   let shape:Shape | null=null
+    //@ts-ignore
+    const tool=window.selectedtool
+    if(tool == "rect"){
+         shape={
+            //@ts-ignore
+            type:"rect",
+            x:startx,
+            y:starty,
+            width:width,
+            height:height
     }
-    existingshapes.push(shape)
+ 
+    }else if(tool == "circle"){
+         shape={
+         type:"circle",
+         centerX:startx + width / 2,
+         centerY:starty + height / 2,
+         radius:Math.hypot(width, height) / 2
+        }
+    }else if(tool == "line"){
+        shape={
+        type:"line",
+        x1:startx,
+        y1:starty,
+        x2:e.clientX,
+        y2:e.clientY
+       }
+    }else if(tool == "triangle"){
+         shape={
+            type:"triangle",
+            x1:startx,
+            y1:starty,
+            x2:startx+width/2,
+            y2:starty+height,
+            x3:startx-width/2,
+            y3:starty+height
+        }
+    }
+    if(!shape){
+        return
+    }
+   
     socket.send(JSON.stringify({
         type:"chat",
         roomid:roomid,
@@ -70,7 +119,41 @@ export async function initdraw(canvas:HTMLCanvasElement,roomid:string,socket:Web
         const height= e.clientY-starty;
         clearcanvas(existingshapes,ctx,canvas)
         ctx.strokeStyle="rgba(255,255,255)"
-        ctx.strokeRect(startx,starty,width,height)
+        //@ts-ignore
+        const tool=window.selectedtool
+        if(tool== "rect"){
+            ctx.strokeRect(startx,starty,width,height)
+        }else if(tool== "circle"){
+           
+        const centerx = startx + width / 2;
+        const centery = starty + height / 2;
+        const radius = Math.hypot(width, height) / 2; 
+        
+        ctx.beginPath();
+        ctx.arc(centerx, centery, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.closePath();
+
+        }else if(tool == "line"){
+            
+            
+            ctx.beginPath();
+            ctx.moveTo(startx,starty);
+            ctx.lineTo(e.clientX,e.clientY)
+            ctx.stroke()
+         
+        }else if(tool == "triangle"){
+            const x1 = startx, y1 = starty; // First point (top vertex)
+            const x2 = startx + width / 2, y2 = starty + height; // Bottom-right vertex
+            const x3 = startx - width / 2, y3 = starty + height; // Bottom-left vertex
+        
+            ctx.beginPath();
+            ctx.moveTo(x1, y1); // Move to the first point
+            ctx.lineTo(x2, y2); // Line to second point
+            ctx.lineTo(x3, y3); // Line to third point
+            ctx.closePath(); // Close path to form triangle
+            ctx.stroke();         
+        }
     }
    }) 
 }
@@ -81,9 +164,25 @@ function clearcanvas(existingshapes:Shape[], ctx:CanvasRenderingContext2D,canvas
      ctx.fillRect(0,0,canvas.width,canvas.height);
      existingshapes.map((shapes)=>{
          if(shapes.type === "rect"){
-
-             ctx.strokeStyle="rgba(255,255,255)"
-             ctx.strokeRect(shapes.x,shapes.y,shapes.width,shapes.height)
+            ctx.strokeStyle="rgba(255,255,255)"
+            ctx.strokeRect(shapes.x,shapes.y,shapes.width,shapes.height)
+            }else if(shapes.type === "circle"){                 
+            ctx.beginPath();
+            ctx.arc(shapes.centerX, shapes.centerY, shapes.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.closePath();
+            }else if(shapes.type == "line"){    
+            ctx.beginPath();
+            ctx.moveTo(shapes.x1,shapes.y1);
+            ctx.lineTo(shapes.x2,shapes.y2)
+            ctx.stroke()
+            }else if(shapes.type == "triangle"){
+                ctx.beginPath();
+                ctx.moveTo(shapes.x1,shapes.y1); 
+                ctx.lineTo(shapes.x2,shapes.y2); 
+                ctx.lineTo(shapes.x3,shapes. y3); 
+                ctx.closePath(); 
+                ctx.stroke();      
             }
      })
 
