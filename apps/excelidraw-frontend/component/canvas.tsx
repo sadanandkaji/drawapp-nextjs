@@ -1,29 +1,27 @@
-
-import { initdraw } from "@/draw"
 import { useEffect, useRef, useState } from "react"
 import { Iconbutton } from "./iconbutton";
 import { Circle,PenLineIcon, RectangleHorizontalIcon, Text, Triangle } from "lucide-react";
+import { Game } from "@/draw/game";
 
 
-type shape=  "circle" | "rect" | "line" | "triangle" |"text"
+export type Tool=  "circle" | "rect" | "line" | "triangle" |"text"
 export function Canvas({roomid,socket}:{roomid:string ,socket:WebSocket}){
 
      const canvasref=useRef<HTMLCanvasElement>(null)
-     const [selectedtool,setselectedtool]=useState<shape>("line")
+     const [selectedtool,setselectedtool]=useState<Tool>("line")
+     const [game,setgame]=useState<Game>()
 
      useEffect(()=>{
-      //@ts-ignore
-       window.selectedtool=selectedtool;
-     },[selectedtool])
+      game?.setTool(selectedtool)
+     },[selectedtool,game])
      useEffect(() => {
-      const interval = setInterval(() => {
         if (canvasref.current) {
-          initdraw(canvasref.current, roomid, socket);
-          clearInterval(interval);
+          const g=new Game(canvasref.current,roomid,socket)
+          setgame(g)
+          return ()=>{
+            g.destroy()
+          }
         }
-      }, 100); 
-    
-      return () => clearInterval(interval);
     }, [canvasref]);
           return <div style={{
             height:"100vh",
@@ -36,8 +34,8 @@ export function Canvas({roomid,socket}:{roomid:string ,socket:WebSocket}){
 }
 
 function Topbar({selectedtool,setselectedtool}:{
-  selectedtool:shape,
-  setselectedtool:(s:shape)=>void
+  selectedtool:Tool,
+  setselectedtool:(s:Tool)=>void
 }){
 return <div style={{
     position:"absolute",
